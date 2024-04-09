@@ -1,0 +1,4 @@
+*.iml
+.idea/
+registry
+jenkins_home
