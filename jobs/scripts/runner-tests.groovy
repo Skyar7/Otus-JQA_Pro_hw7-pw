@@ -90,8 +90,7 @@ branch: ${REFSPEC}
             def url = "https://api.telegram.org/bot6417628982:AAHTx9w923pwYynFdObHIKvax_VHxspRDj4/";
 //            withCredentials([string(credentialsId: telegram_token, valueVar: "TELEGRAM_TOKEN")]);
 //            def url = "https://api.telegram.org/bot${TELEGRAM_TOKEN}";
-            def stringBuilder = new StringBuilderWriter();
-            stringBuilder.append(url);
+            def stringBuilder = new StringBuilderWriter(url);
             def urlConnection = new URL(stringBuilder.toString()).openConnection() as HttpURLConnection;
             urlConnection.setRequestMethod('GET');
             urlConnection.setDoOutput(true);
