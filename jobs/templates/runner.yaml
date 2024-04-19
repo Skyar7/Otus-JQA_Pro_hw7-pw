@@ -1,0 +1,32 @@
+- job-template:
+    name: 'runner-tests'
+    description: '<h3 style="color:#999696;">Runner tests</h3>'
+    project-type: pipeline
+    concurrent: true
+    logrotate:
+      daysToKeep: 30
+      numToKeep: 10
+    properties:
+      - build-discarder:
+          num-to-keep: 100
+    parameters:
+      - text:
+          name: YAML_CONFIG
+          default: |
+            BROWSER_NAME: chrome
+            BROWSER_VERSION: 121.0
+            REMOTE_URL: http://127.0.0.1/wd/hub
+            TEST_VERSION: 1.0.0
+            TEST_TYPES:
+              - ui
+              - api
+              - mock
+              - mobile
+      - string:
+          name: REFSPEC
+          default: main
+          description: Branch for tests
+    pipeline-scm:
+      scm:
+      - git-runner
+      script-path: jobs/scripts/runner-tests.groovy

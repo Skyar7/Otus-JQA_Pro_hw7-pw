@@ -1,0 +1,51 @@
+version: '3.7'
+
+services:
+  nginx:
+    privileged: true
+    restart: always
+    image: nginx:latest
+    container_name: nginx
+    hostname: nginx
+    volumes:
+      - ~/nginx/my_proxy.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - 80:80
+
+  registry:
+    image: registry
+    restart: always
+    container_name: registry
+    hostname: registry
+    volumes:
+      - ./registry:/var/lib/registry
+    ports:
+      - "5005:5005"
+    environment:
+      - REGISTRY_HTTP_ADDR=0.0.0.0:5005
+
+  jenkins:
+    restart: always
+    image: jenkins/jenkins
+    hostname: jenkins
+    privileged: true
+    user: root
+    ports:
+      - "127.0.0.1:8090:8080"
+      - 50000:50000
+    environment:
+      - JAVA_OPTS="-Dhudson.model.DownloadService.noSignatureCheck=true"
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - /var/jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  jobs_uploader:
+    build:
+      context: ./config
+      dockerfile: Dockerfile
+    user: root
+    environment:
+      - JENKINS_HOSTNAME=http://nginx
+      - JENKINS_USERNAME=$JENKINS_USERNAME
+      - JENKINS_PASSWORD=$JENKINS_PASSWORD

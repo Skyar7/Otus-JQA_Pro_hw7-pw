@@ -1,0 +1,19 @@
+- job-template:
+   name: jobs_uploader
+   description: Jobs uploader to jenkins
+   project-type: pipeline
+   properties:
+     - build-discarder:
+         num-to-keep: 60
+   triggers:
+     - timed: 'H 0 * * *'
+   parameters:
+      - string:
+          name: REFSCPEC
+          default: main
+          description: Branch for jenkins-jobs repo
+   pipeline-scm:
+      scm:
+      - git-runner
+      script-path: jobs/scripts/jobs_template.groovy
+   

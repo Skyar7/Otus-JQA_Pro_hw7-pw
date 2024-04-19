@@ -1,0 +1,41 @@
+---
+
+- scm:
+    name: git-runner
+    scm:
+    - git:
+        url: https://github.com/Skyar7/Otus-JQA_Pro_hw7-pw.git
+        branches:
+        - ${REFSPEC}
+
+- scm:
+    name: git-ui-tests
+    scm:
+    - git:
+        url: https://github.com/Skyar7/Otus-JQA_Pro_hw1-2.git
+        branches:
+        - ${REFSPEC}
+
+- scm:
+    name: git-api-tests
+    scm:
+    - git:
+        url: https://github.com/Skyar7/Otus-JQA_Pro_hw3.git
+        branches:
+        - ${REFSPEC}
+
+- scm:
+    name: git-mock-tests
+    scm:
+    - git:
+        url: https://github.com/Skyar7/Otus-JQA_Pro_hw5.git
+        branches:
+        - ${REFSPEC}
+
+- scm:
+    name: git-mobile-tests
+    scm:
+    - git:
+        url: https://github.com/Skyar7/Otus-JQA_Pro_hw6.git
+        branches:
+        - ${REFSPEC}
