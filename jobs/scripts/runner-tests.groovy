@@ -12,11 +12,14 @@ branch: ${REFSPEC}
 
             if (config != null) {
                 for (param in config.entrySet()) {
-                    env.setProperty(param.getValue())
+                    env."${param.getKey()}" = param.getValue()
                 }
             }
 
-            testTypes = env.getProperty('TEST_TYPES').replace("[", "").replace("]","").split(",\\s*") //["ui", "api", "mock", "mobile"]
+            echo "TEST_TYPES: ${env.TEST_TYPES}"
+            String testTypesString = env.TEST_TYPES.replace("[", "").replace("]","").replace("\"", "")
+            testTypes = testTypesString.split(",\\s*")
+            echo "Processed testTypes: ${testTypes}"
         }
 
         stage('Checkout') {
@@ -27,19 +30,28 @@ branch: ${REFSPEC}
         def jobs = [:];
         def triggeredJobs = [:];
 
-        for(type in testTypes) {
-            jobs[type] = {
+        for (type in testTypes) {
+            // Создаем замыкание с явным указанием контекста, используя другое имя для параметра
+            def jobClosure = { testType ->
                 node("maven") {
-                    stage("Running $type tests") {
-                        triggeredJobs[type] = build(job: "$type-tests", parameters: [
+                    stage("Running $testType tests") {
+                        triggeredJobs[testType] = build(job: "$testType-tests", parameters: [
                                 text(name: "YAML_CONFIG", value: env.YAML_CONFIG)
                         ])
                     }
                 }
-            }
+            }.curry(type) // Используем метод curry для передачи текущего значения type в замыкание
+
+            jobs[type] = jobClosure
         }
 
         parallel jobs;
+
+        // Ожидаем завершения всех задач
+        waitUntil {
+            // Проверяем, завершились ли все задачи
+            return triggeredJobs.every { it.value.result != null }
+        }
 
         stage("Creating additional report artifacts") {
             dir("allure-results") {

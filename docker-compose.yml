@@ -26,7 +26,11 @@ services:
 
   jenkins:
     restart: always
-    image: jenkins/jenkins
+    #image: jenkins/jenkins
+    #image: jenkins/jenkins:lts
+    build:
+      context: ./config
+      dockerfile: Dockerfile
     hostname: jenkins
     privileged: true
     user: root
@@ -36,9 +40,17 @@ services:
     environment:
       - JAVA_OPTS="-Dhudson.model.DownloadService.noSignatureCheck=true"
       - DOCKER_HOST=unix:///var/run/docker.sock
+      #- DOCKER_HOST=tcp://localhost:2376
     volumes:
       - /var/jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+
+      #docker:
+      #image: docker:dind
+      #volumes:
+      #- /var/run/docker.sock:/var/run/docker.sock
+      #ports:
+      #- "2376:2375"
 
   jobs_uploader:
     build:

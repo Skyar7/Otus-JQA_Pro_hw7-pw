@@ -3,7 +3,7 @@
     name: QA
     view-type: list
     description: |
-      <h3 style="color:#999696;">QA Jobs</h3>
+      <h3 style="color:#999696;">Test Jobs</h3>
     filter-executors: true
     filter-queue: true
     job-name:
@@ -24,12 +24,13 @@
 - view:
     name: DevOps
     view-type: list
-    description: DevOps
+    description: |
+      <h3 style="color:#999696;">DevOps</h3>
     filter-executors: true
     filter-queue: true
     job-name:
-       - 'jobs_uploader'
+      - 'jobs_uploader'
     columns:
-       - status
-       - build-button
-       - job
+      - status
+      - build-button
+      - job
