@@ -13,21 +13,12 @@
       - text:
           name: YAML_CONFIG
           default: |
-            TEST_VERSION: 1.0.0
+            TEST_VERSION: 2.0.0
       - string:
           name: REFSPEC
           default: main
-          description: Branch for mock tests
+          description: "Branch for mock tests"
     pipeline-scm:
       scm:
       - git-mock-tests
       script-path: jenkins/mock-tests.groovy
-    publishers:
-      - allure:
-        results-paths:
-        - path: 'allure-results'
-        properties:
-        - jdk: openjdk1.8
-        commandline: allure2
-        report-build-policy: UNSTABLE
-        include-properties: true

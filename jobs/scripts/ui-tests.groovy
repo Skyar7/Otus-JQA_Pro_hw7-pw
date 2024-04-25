@@ -6,11 +6,11 @@ build user: ${BUILD_USER}
 branch: ${REFSPEC}
 """
 
-            config = readYaml text: env.YAML_CONFIG ?: null;
+            config = readYaml text: env.YAML_CONFIG
 
             if (config != null) {
                 for (param in config.entrySet()) {
-                    env."${param.getKey()}" = param.getValue()
+                    env.setProperty(param.getKey(), param.getValue())
                 }
             }
         }
@@ -18,6 +18,7 @@ branch: ${REFSPEC}
         stage("Checkout") {
             checkout scm;
         }
+
         stage("Create configuration") {
             sh """
                 echo BROWSER_NAME=${env.BROWSER_NAME} > ./.env
@@ -27,20 +28,23 @@ branch: ${REFSPEC}
                 echo DRIVER_TYPE=${env.DRIVER_TYPE} >> ./.env
             """
         }
-        stage("Run UI tests") {
-            sh """
-                #!/bin/sh
-                export PATH=$PATH:/usr/bin:/usr/local/bin
-                mkdir ./reports
-                docker run --rm --network=host --env-file ./.env -v ./reports:/root/ui_tests_allure-results -t ui_tests:${env.getProperty('TEST_VERSION')}
-    """
+
+        stage("UI tests in docker image") {
+            sh "docker run --rm \
+            --network=host --env-file ./.env \
+            -v /root/.m2/repository:/root/.m2/repository \
+            -v ./surefire-reports:/home/ubuntu/ui_tests/target/surefire-reports \
+            -v ./allure-results:/home/ubuntu/ui_tests/target/allure-results \
+            -t localhost:5005/ui_tests:${env.getProperty('TEST_VERSION')}"
         }
-        stage("Publish allure results") {
-            REPORT_DISABLE = Boolean.parseBoolean(env.getProperty('REPORT_DISABLE')) ?: false
+
+        stage("Publish Allure Reports") {
             allure([
+                    includeProperties: false,
+                    jdk: '',
+                    properties: [],
                     reportBuildPolicy: 'ALWAYS',
-                    results: ["./reports", "./allure-results"],
-                    disabled: REPORT_DISABLE
+                    results: [[path: './allure-results']]
             ])
         }
     }

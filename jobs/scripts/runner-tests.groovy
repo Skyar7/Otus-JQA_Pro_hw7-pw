@@ -1,85 +1,40 @@
+import com.google.inject.Stage
 import groovy.json.JsonSlurperClassic
+import org.apache.groovy.io.StringBuilderWriter
 
-timeout(60) {
-    node('maven') {
+timeout(30) {
+    node("maven") {
         wrap([$class: 'BuildUser']) {
             currentBuild.description = """
-build user: ${BUILD_USER}
-branch: ${REFSPEC}
+user: $BUILD_USER
+branch: $REFSPEC
 """
-//            BUILD_USER_EMAIL = $BUILD_USER_EMAIL;
-            config = readYaml text: env.YAML_CONFIG ?: null;
-
-            if (config != null) {
-                for (param in config.entrySet()) {
-                    env."${param.getKey()}" = param.getValue()
-                }
-            }
-
-            echo "TEST_TYPES: ${env.TEST_TYPES}"
-            String testTypesString = env.TEST_TYPES.replace("[", "").replace("]","").replace("\"", "")
-            testTypes = testTypesString.split(",\\s*")
-            echo "Processed testTypes: ${testTypes}"
         }
 
-        stage('Checkout') {
-            checkout scm;
-            // git branch: "$REFSPEC", credentialsId: 'jenkins', url: 'git@github.com:Skyar7/Otus-JQA_Pro_hw7-pw.git'
-        }
+        config = readYaml text: env.YAML_CONFIG
 
-        def jobs = [:];
-        def triggeredJobs = [:];
-
-        for (type in testTypes) {
-            // Создаем замыкание с явным указанием контекста, используя другое имя для параметра
-            def jobClosure = { testType ->
-                node("maven") {
-                    stage("Running $testType tests") {
-                        triggeredJobs[testType] = build(job: "$testType-tests", parameters: [
-                                text(name: "YAML_CONFIG", value: env.YAML_CONFIG)
-                        ])
-                    }
-                }
-            }.curry(type) // Используем метод curry для передачи текущего значения type в замыкание
-
-            jobs[type] = jobClosure
-        }
-
-        parallel jobs;
-
-        // Ожидаем завершения всех задач
-        waitUntil {
-            // Проверяем, завершились ли все задачи
-            return triggeredJobs.every { it.value.result != null }
-        }
-
-        stage("Creating additional report artifacts") {
-            dir("allure-results") {
-                sh "echo BROWSER_NAME=${env.getProperty('BROWSER_NAME')} > environments.txt"
-                sh "echo BROWSER_VERSION=${env.getProperty('BROWSER_VERSION')} >> environments.txt"
-                sh "echo TEST_VERSION=${env.getProperty('TEST_VERSION')} >> environments.txt"
+        if (config != null) {
+            for(param in config.entrySet()) {
+                env.setProperty(param.getKey(), param.getValue())
             }
         }
 
-        stage("Copy allure reports") {
-            dir("allure-results") {
+        echo "TEST_TYPES: ${env.TEST_TYPES}"
+        String testTypesString = env.TEST_TYPES.replace("[", "").replace("]","").replace("\"", "")
+        testTypes = testTypesString.split(",\\s*")
+        echo "Processed testTypes: ${testTypes}"
 
-                for(type in testTypes) {
-                    copyArtifacts filter: "allure-report.zip", projectName: "${triggeredJobs[type].projectName}", selector: lastSuccessful(), optional: true
-                    sh "unzip ./allure-report.zip -d ."
-                    sh "rm -rf ./allure-report.zip"
-                }
+        def triggerdJobs = [:]
+
+        for (i = 0; i < testTypes.size(); i+= 1){
+            def type = testTypes[i] + "-tests"
+            sh "echo add ${type}"
+            triggerdJobs[type]={
+                build wait: true, job: type, parameters: [text(name: "YAML_CONFIG", value: env.YAML_CONFIG)]
             }
         }
 
-        stage("Publish allure results") {
-            REPORT_DISABLE = Boolean.parseBoolean(env.getProperty('REPORT_DISABLE')) ?: false
-            allure([
-                    reportBuildPolicy: 'ALWAYS',
-                    results: ["."],
-                    disabled: REPORT_DISABLE
-            ])
-        }
+        parallel triggerdJobs
 
         stage("Send Telegram notification") {
             def message = "🔹🔹🔹🔹 Tests Result 🔹🔹🔹🔹\n";

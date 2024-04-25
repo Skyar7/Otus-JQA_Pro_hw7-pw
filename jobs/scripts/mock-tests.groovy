@@ -6,11 +6,11 @@ build user: ${BUILD_USER}
 branch: ${REFSPEC}
 """
 
-            config = readYaml text: env.YAML_CONFIG ?: null;
+            config = readYaml text: env.YAML_CONFIG
 
             if (config != null) {
                 for (param in config.entrySet()) {
-                    env."${param.getKey()}" = param.getValue()
+                    env.setProperty(param.getKey(), param.getValue())
                 }
             }
         }
@@ -18,18 +18,23 @@ branch: ${REFSPEC}
         stage("Checkout") {
             checkout scm;
         }
-        stage("Create configuration") {
+
+        stage("MOCK tests in docker image") {
+            sh "docker run --rm \
+            --network=host \
+            -v /root/.m2/repository:/root/.m2/repository \
+            -v ./surefire-reports:/home/ubuntu/mock_tests/target/surefire-reports \
+            -v ./allure-results:/home/ubuntu/mock_tests/target/allure-results \
+            -t localhost:5005/mock_tests:${env.getProperty('TEST_VERSION')}"
         }
-        stage("Run mock tests") {
-            sh "mkdir ./reports"
-            sh "docker run --rm --network=host --env-file ./.env -v ./reports:root/mock_tests_allure-results -t localhost:5005/mock_tests:${env.getProperty('TEST_VERSION')}"
-        }
-        stage("Publish allure results") {
-            REPORT_DISABLE = Boolean.parseBoolean(env.getProperty('REPORT_DISABLE')) ?: false
+
+        stage("Publish Allure Reports") {
             allure([
+                    includeProperties: false,
+                    jdk: '',
+                    properties: [],
                     reportBuildPolicy: 'ALWAYS',
-                    results: ["./reports", "./allure-results"],
-                    disabled: REPORT_DISABLE
+                    results: [[path: './allure-results']]
             ])
         }
     }

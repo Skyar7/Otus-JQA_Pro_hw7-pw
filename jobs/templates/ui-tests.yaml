@@ -6,14 +6,11 @@
     logrotate:
       daysToKeep: 30
       numToKeep: 10
-    properties:
-      - build-discarder:
-          num-to-keep: 100
     parameters:
       - text:
           name: YAML_CONFIG
           default: |
-            TEST_VERSION: 1.0.0
+            TEST_VERSION: 2.0.0
             BROWSER_NAME: chrome
             BROWSER_VERSION: 121.0
             BASE_URL: https://otus.ru
@@ -22,17 +19,8 @@
       - string:
           name: REFSPEC
           default: original
-          description: Branch for UI tests
+          description: "Branch for UI tests"
     pipeline-scm:
       scm:
       - git-ui-tests
       script-path: jenkins/ui-tests.groovy
-    publishers:
-      - allure:
-        results-paths:
-        - path: 'allure-results'
-        properties:
-        - jdk: openjdk1.8
-        commandline: allure2
-        report-build-policy: UNSTABLE
-        include-properties: true

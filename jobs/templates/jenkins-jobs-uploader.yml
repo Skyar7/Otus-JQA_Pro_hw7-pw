@@ -16,4 +16,3 @@
       scm:
       - git-runner
       script-path: jobs/scripts/jobs_template.groovy
-   

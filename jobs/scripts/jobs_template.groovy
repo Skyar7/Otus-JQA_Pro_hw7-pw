@@ -1,4 +1,4 @@
-timeout(60) {
+timeout(10) {
    node('maven') {
       stage("Checkout") {
          checkout scm
